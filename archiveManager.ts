@@ -36,10 +36,20 @@ export const archiveManager = {
 
   saveQuestions(topicId: string, newQuestions: Question[]) {
     const existing = this.getArchive(topicId);
-    // Basic de-duplication by text
-    const seen = new Set(existing.map(q => q.text));
-    const uniqueNew = newQuestions.filter(q => !seen.has(q.text));
-    
+    const seen = new Set(existing.map(q => q.text.trim().toLowerCase()));
+
+    // Deduplicate within the new batch AND against existing
+    const uniqueNew: Question[] = [];
+    newQuestions.forEach(q => {
+      const normalizedText = q.text.trim().toLowerCase();
+      if (!seen.has(normalizedText)) {
+        seen.add(normalizedText);
+        uniqueNew.push(q);
+      }
+    });
+
+    if (uniqueNew.length === 0) return;
+
     const archive: TopicArchive = {
       topicId,
       questions: [...existing, ...uniqueNew],
